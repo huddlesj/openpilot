@@ -51,11 +51,15 @@ const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
 typedef struct CameraInfo {
-  int frame_width, frame_height;
-  int frame_stride;
+  uint32_t frame_width, frame_height;
+  uint32_t frame_stride;
   bool bayer;
   int bayer_flip;
   bool hdr;
+  uint32_t frame_offset = 0;
+  uint32_t extra_height = 0;
+  int registers_offset = -1;
+  int stats_offset = -1;
 } CameraInfo;
 
 typedef struct FrameMetadata {
@@ -111,6 +115,7 @@ public:
   FrameMetadata cur_frame_data;
   VisionBuf *cur_rgb_buf;
   VisionBuf *cur_yuv_buf;
+  VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
   int rgb_width, rgb_height, rgb_stride;
