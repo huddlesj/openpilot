@@ -4,6 +4,7 @@ import signal
 import struct
 import time
 import subprocess
+from dataclasses import dataclass
 from typing import Optional, List, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
@@ -66,6 +67,7 @@ def join_process(process: Process, timeout: float) -> None:
 
 
 class ManagerProcess(ABC):
+  name: str
   unkillable = False
   daemon = False
   sigkill = False
@@ -75,7 +77,6 @@ class ManagerProcess(ABC):
   notcar = False
   proc: Optional[Process] = None
   enabled = True
-  name = ""
 
   last_watchdog_time = 0
   watchdog_max_dt: Optional[int] = None
@@ -183,19 +184,11 @@ class ManagerProcess(ABC):
     return state
 
 
+@dataclass
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
-    self.name = name
-    self.cwd = cwd
-    self.cmdline = cmdline
-    self.enabled = enabled
-    self.onroad = onroad
-    self.offroad = offroad
-    self.driverview = driverview
-    self.notcar = notcar
-    self.unkillable = unkillable
-    self.sigkill = sigkill
-    self.watchdog_max_dt = watchdog_max_dt
+  name: str
+  cwd: str
+  cmdline: List[str]
 
   def prepare(self) -> None:
     pass
@@ -216,18 +209,10 @@ class NativeProcess(ManagerProcess):
     self.shutting_down = False
 
 
+@dataclass
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, onroad=True, offroad=False, driverview=False, notcar=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
-    self.name = name
-    self.module = module
-    self.enabled = enabled
-    self.onroad = onroad
-    self.offroad = offroad
-    self.driverview = driverview
-    self.notcar = notcar
-    self.unkillable = unkillable
-    self.sigkill = sigkill
-    self.watchdog_max_dt = watchdog_max_dt
+  name: str
+  module: str
 
   def prepare(self) -> None:
     if self.enabled:
@@ -249,16 +234,13 @@ class PythonProcess(ManagerProcess):
     self.shutting_down = False
 
 
+@dataclass
 class DaemonProcess(ManagerProcess):
   """Python process that has to stay running across manager restart.
   This is used for athena so you don't lose SSH access when restarting manager."""
-  def __init__(self, name, module, param_name, enabled=True):
-    self.name = name
-    self.module = module
-    self.param_name = param_name
-    self.enabled = enabled
-    self.onroad = True
-    self.offroad = True
+  name: str
+  module: str
+  param_name: str
 
   def prepare(self) -> None:
     pass
