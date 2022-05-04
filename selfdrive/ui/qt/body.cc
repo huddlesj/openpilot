@@ -5,11 +5,52 @@
 
 #include <QPainter>
 
+#include "selfdrive/common/params.h"
+
+RecordButton::RecordButton(QWidget *parent) : QPushButton(parent) {
+  setCheckable(true);
+  setChecked(false);
+  setFixedSize(148, 148);
+}
+
+void RecordButton::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
+
+  QPoint center(width() / 2, height() / 2);
+
+  QColor bg(isChecked() ? "#FFFFFF" : "#404040");
+  QColor accent(isChecked() ? "#FF0000" : "#FFFFFF");
+  if (isDown()) {
+    accent.setAlphaF(0.7);
+  }
+
+  p.setPen(Qt::NoPen);
+  p.setBrush(bg);
+  p.drawEllipse(center, 74, 74);
+
+  p.setPen(QPen(accent, 6));
+  p.setBrush(Qt::NoBrush);
+  p.drawEllipse(center, 42, 42);
+
+  p.setPen(Qt::NoPen);
+  p.setBrush(accent);
+  p.drawEllipse(center, 22, 22);
+
+  QWidget *par = (QWidget *)parent();
+  if (par) {
+    move(par->width() - width() - 20, par->height() - height() - 20);
+  }
+}
+
+
 BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QLabel(parent) {
   awake = new QMovie("../assets/body/awake.gif");
   awake->setCacheMode(QMovie::CacheAll);
   sleep = new QMovie("../assets/body/sleep.gif");
   sleep->setCacheMode(QMovie::CacheAll);
+
+  btn = new RecordButton(this);
 
   QPalette p(Qt::black);
   setPalette(p);
@@ -17,7 +58,9 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QL
 
   setAlignment(Qt::AlignCenter);
 
-  setAttribute(Qt::WA_TransparentForMouseEvents, true);
+  QObject::connect(btn, &QPushButton::clicked, [=](bool checked) {
+    Params().putBool("EnableLogging", checked);
+  });
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &BodyWindow::updateState);
 }
@@ -28,9 +71,8 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
-  p.translate(width() - 136, 16);
-
   // battery outline + detail
+  p.translate(width() - 136, 16);
   const QColor gray = QColor("#737373");
   p.setBrush(Qt::NoBrush);
   p.setPen(QPen(gray, 4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
